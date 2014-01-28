@@ -51,20 +51,21 @@ namespace Syslog.Server
 	{
 		public event Action<MessageReceivedEventArgs> MessageReceived;
 
-		private LogBuffer buffer;
-        private int logBufferFlushFrequency = 30;
-		private Dictionary<string, MessageHandler> ipFilters = new Dictionary<string, MessageHandler>();
-		private Dictionary<string, string[]> ipForwards = new Dictionary<string, string[]>();
-
-		private IPAddress listenAddress;
-		private Socket socket;
-		private Socket sendSocket;
-		private readonly int SYSLOG_PORT;
 		private const int RECEIVE_BUFFER_SIZE = 1024;
 
-		private byte[] receiveBuffer = new Byte[RECEIVE_BUFFER_SIZE];
-		private EndPoint remoteEndpoint;
-		private Regex msgRegex = new Regex(@"
+		private LogBuffer _buffer;
+        private readonly int _logBufferFlushFrequency = 30;
+		private readonly Dictionary<string, MessageHandler> _ipFilters = new Dictionary<string, MessageHandler>();
+		private readonly Dictionary<string, string[]> _ipForwards = new Dictionary<string, string[]>();
+
+		private readonly IPAddress _listenAddress;
+		private Socket _socket;
+		private Socket _sendSocket;
+		private readonly int _listenPort;
+		
+		private byte[] _receiveBuffer = new Byte[RECEIVE_BUFFER_SIZE];
+		private EndPoint _remoteEndpoint;
+		private readonly Regex _msgRegex = new Regex(@"
 (\<(?<PRI>\d{1,3})\>){0,1}
 (?<HDR>
   (?<TIMESTAMP>
@@ -79,23 +80,24 @@ namespace Syslog.Server
 (?<MSG>.*)
 ", RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
-        /// <summary>
-        /// Creates an instance of the listener
-        /// </summary>
-        /// <param name="listenIPAddress">A valid IPv4 address.</param>
-        /// <param name="listenPort">A valid port value from 1 to 65535</param>
-        public Listener(string listenIPAddress, int listenPort, int logFlushFrequency)
+		/// <summary>
+		/// Creates an instance of the listener
+		/// </summary>
+		/// <param name="listenIpAddress">A valid IPv4 address.</param>
+		/// <param name="listenPort">A valid port value from 1 to 65535</param>
+		/// <param name="logFlushFrequency">Frequence to flush the log file default 30</param>
+		public Listener(string listenIpAddress, int listenPort, int logFlushFrequency)
         {
-            if (listenIPAddress == null)
+            if (listenIpAddress == null)
             {
-                throw new ArgumentNullException("listenIPAddress", "An IP Address is required.");
+                throw new ArgumentNullException("listenIpAddress", "An IP Address is required.");
             }
 
-            IPAddress tempIP = null;
+            IPAddress tempIp = null;
 
-            if (listenIPAddress.ToUpper() != "ANY" && !IPAddress.TryParse(listenIPAddress, out tempIP))
+            if (listenIpAddress.ToUpper() != "ANY" && !IPAddress.TryParse(listenIpAddress, out tempIp))
             {
-                throw new ArgumentException("IP address is not valid.", "listenIPAddress");
+                throw new ArgumentException("IP address is not valid.", "listenIpAddress");
             }
 
             if (listenPort < 0 || listenPort > 65535)
@@ -108,14 +110,14 @@ namespace Syslog.Server
                 throw new ArgumentOutOfRangeException("logFlushFrequency", "logFlushFrequency must be greater than 0.");
             }
 
-            if (tempIP == null)
+            if (tempIp == null)
             {
-                tempIP = IPAddress.Any;
+                tempIp = IPAddress.Any;
             }
 
-            this.listenAddress = tempIP;
-            this.SYSLOG_PORT = listenPort;
-            this.logBufferFlushFrequency = logFlushFrequency;
+            _listenAddress = tempIp;
+            _listenPort = listenPort;
+            _logBufferFlushFrequency = logFlushFrequency;
 		}
 
         /// <summary>
@@ -139,14 +141,14 @@ namespace Syslog.Server
 			}
 
             // Ensure that a socket needs to be initialized.
-            if (this.socket != null) { return true; }
+            if (_socket != null) { return true; }
 
             // Ensure that a socket needs to be initialized and bound.
-            if (this.socket != null && this.socket.IsBound) { return true; }
+            if (_socket != null && _socket.IsBound) { return true; }
 
 			try
 			{
-				this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+				_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 			}
 			catch (Exception ex)
 			{
@@ -158,35 +160,34 @@ namespace Syslog.Server
             // Bind the socket to the specificed IP and port
 			try
 			{
-				this.socket.Bind(new IPEndPoint(this.listenAddress, SYSLOG_PORT));
+				_socket.Bind(new IPEndPoint(_listenAddress, _listenPort));
 			}
 			catch (Exception ex)
 			{
-				this.socket.Close();
-				this.socket = null;
+				_socket.Close();
+				_socket = null;
 
 				EventLogger.LogEvent("Could not bind socket because: " + ex.Message, System.Diagnostics.EventLogEntryType.Error);
 
 				return false;
 			}
 
-            if (this.socket == null) { return false; }
+            if (_socket == null) { return false; }
 
             // Create a new LogBuffer that will be used to store messages until they are discarded or flushed to a persistent store.
-			buffer = new LogBuffer(this.logBufferFlushFrequency);
+			_buffer = new LogBuffer(_logBufferFlushFrequency);
 
 			if (handlers != null)
 			{
                 // Load each module (handler) from the configuration file
 				foreach (HandlerConfiguration handler in handlers.Handlers)
 				{
-					MessageHandler msgHandler = new MessageHandler(handler.AssemblyName, handler.ParserClassName,
-								handler.StorageClassName, handler.ConnectionString);
+					var msgHandler = new MessageHandler(handler.AssemblyName, handler.ParserClassName, handler.StorageClassName, handler.ConnectionString);
 
                     // If the handler has a storage class then setup the buffer to temporarily store the messages
 					if (handler.StorageClassName != null)
 					{
-						buffer.InitializeBuffer(msgHandler);
+						_buffer.InitializeBuffer(msgHandler);
 					}
 
                     // If the handler is configured for specific IP addresses, setup the IP handler lookup list
@@ -196,12 +197,12 @@ namespace Syslog.Server
 
 						for (int i = 0; i < filters.Length; i++)
 						{
-							ipFilters.Add(filters[i], msgHandler);
+							_ipFilters.Add(filters[i], msgHandler);
 
                             // If the handler also has IP forwards set, add them to the IP Forwards lookup list
 							if (handler.IPForwards != null && handler.IPForwards.Length > 0)
 							{
-								ipForwards.Add(filters[i], handler.IPForwards.Split(',', ';'));
+								_ipForwards.Add(filters[i], handler.IPForwards.Split(',', ';'));
 							}
 						}
 					}
@@ -209,12 +210,12 @@ namespace Syslog.Server
 			}
 
             // If any handler has an IP forward setup, create a send socket that will be used forward messages
-			if (ipForwards.Count > 0)
+			if (_ipForwards.Count > 0)
 			{
 				try
 				{
-					sendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-					sendSocket.Bind(new IPEndPoint(IPAddress.Any, 0));
+					_sendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+					_sendSocket.Bind(new IPEndPoint(IPAddress.Any, 0));
 				}
 				catch (Exception ex)
 				{
@@ -243,29 +244,27 @@ namespace Syslog.Server
 		public bool RegisterReceiveOperation()
 		{
             // Ensure that the listener socket is still alive
-            if (this.socket == null) { return false; }
+            if (_socket == null) { return false; }
 
 			try
 			{
                 // receive from anybody
-				this.remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
+				_remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
 
-				EndPoint ep = (EndPoint)this.remoteEndpoint;
+				var ep = _remoteEndpoint;
 
                 // Setup the receive buffer to be used when a message is received
-				this.receiveBuffer = new byte[RECEIVE_BUFFER_SIZE]; // nice and big receive buffer
+				_receiveBuffer = new byte[RECEIVE_BUFFER_SIZE]; // nice and big receive buffer
 
                 // Setup the receive callback
-				this.socket.BeginReceiveFrom(receiveBuffer, 0, RECEIVE_BUFFER_SIZE, SocketFlags.None, ref this.remoteEndpoint,
-					new AsyncCallback(ReceiveCallback), this.socket);
+				_socket.BeginReceiveFrom(_receiveBuffer, 0, RECEIVE_BUFFER_SIZE, SocketFlags.None, ref ep, ReceiveCallback, _socket);
 			}
 			catch (Exception ex)
 			{
-				this.socket.Close();
-				this.socket = null;
+				_socket.Close();
+				_socket = null;
 
-				EventLogger.LogEvent("Could not add callback method to the socket because: " + ex.Message,
-					 System.Diagnostics.EventLogEntryType.Warning);
+				EventLogger.LogEvent("Could not add callback method to the socket because: " + ex.Message, System.Diagnostics.EventLogEntryType.Warning);
 			}
 
 			return true;
@@ -275,9 +274,9 @@ namespace Syslog.Server
         /// Handles the result of send (message forward) operation.
         /// </summary>
         /// <param name="result">The result of a send operatoin.</param>
-		private void SendCallback(IAsyncResult result)
+		private static void SendCallback(IAsyncResult result)
 		{
-			Socket sock = (Socket)result.AsyncState;
+			var sock = (Socket)result.AsyncState;
 
 			if (sock != null)
 			{
@@ -295,25 +294,25 @@ namespace Syslog.Server
 			Socket sock = (Socket)result.AsyncState;
 
 			EndPoint ep = null;
-            IPEndPoint remoteEP = null;
+            IPEndPoint remoteEp = null;
 
             // variable to store received data length
             int inlen;
 
-			remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
+			_remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
 
             // Gather information about the message and the sender
 			try
 			{
-				ep = (EndPoint)remoteEndpoint;
+				ep = _remoteEndpoint;
 				inlen = sock.EndReceiveFrom(result, ref ep);
-				remoteEP = (IPEndPoint)ep;
+				remoteEp = (IPEndPoint)ep;
 			}
 			catch (Exception ex)
 			{
 				// only post messages if class socket reference is not null
 				// in all other cases, the socket has been terminated
-				if (this.socket != null)
+				if (_socket != null)
 				{
 					EventLogger.LogEvent("Receive operation failed with message: " + ex.Message,
 						System.Diagnostics.EventLogEntryType.Warning);
@@ -322,7 +321,7 @@ namespace Syslog.Server
 			}
 
 			// if socket has been closed, ignore received data and return
-            if (this.socket == null) { return; }
+            if (_socket == null) { return; }
 
 			// check that received data is long enough
 			if (inlen <= 0)
@@ -333,17 +332,17 @@ namespace Syslog.Server
 			}
 
             // If an IP forward is defined for the source of this message, forward the message to the specified IP's
-			if (ipForwards.ContainsKey(remoteEP.Address.ToString()))
+			if (_ipForwards.ContainsKey(remoteEp.Address.ToString()))
 			{
-				if (this.socket != null)
+				if (_socket != null)
 				{
-					foreach (string ipAddress in ipForwards[remoteEP.Address.ToString()])
+					foreach (string ipAddress in _ipForwards[remoteEp.Address.ToString()])
 					{
-						byte[] sendBuffer = new byte[this.receiveBuffer.Length];
-						this.receiveBuffer.CopyTo(sendBuffer, 0);
+						byte[] sendBuffer = new byte[_receiveBuffer.Length];
+						_receiveBuffer.CopyTo(sendBuffer, 0);
 
-						this.sendSocket.BeginSendTo(sendBuffer, 0, inlen, SocketFlags.None,
-						   new IPEndPoint(IPAddress.Parse(ipAddress), 514), new AsyncCallback(SendCallback), sendSocket);
+						_sendSocket.BeginSendTo(sendBuffer, 0, inlen, SocketFlags.None,
+						   new IPEndPoint(IPAddress.Parse(ipAddress), 514), new AsyncCallback(SendCallback), _sendSocket);
 					}
 				}
 			}
@@ -353,7 +352,7 @@ namespace Syslog.Server
             // Get the human readable text of the message to process
 			try
 			{
-				packet = System.Text.Encoding.ASCII.GetString(receiveBuffer, 0, inlen);
+				packet = System.Text.Encoding.ASCII.GetString(_receiveBuffer, 0, inlen);
 			}
 			catch (Exception ex)
 			{
@@ -362,18 +361,18 @@ namespace Syslog.Server
 			}
 
             // Run the regular expression against the message text to extract the groups
-			Match m = msgRegex.Match(packet);
+			var m = _msgRegex.Match(packet);
 
 			//If a match is not found the message is not valid
 			if (m != null && !string.IsNullOrEmpty(packet))
 			{
 				//parse PRI section into a priority value
 				int pri;
-				int priority = int.TryParse(m.Groups["PRI"].Value, out pri) ? pri : 0;
+				var priority = int.TryParse(m.Groups["PRI"].Value, out pri) ? pri : 0;
 
 				//parse the HEADER section - contains TIMESTAMP and HOSTNAME
 				string hostname = null;
-				Nullable<DateTime> timestamp = null;
+				DateTime? timestamp = null;
 
                 // Get the timestamp and hostname from the header of the message
 				if (!string.IsNullOrEmpty(m.Groups["HDR"].Value))
@@ -432,31 +431,31 @@ namespace Syslog.Server
 						}
 
 						//If the message is from an IP not listed in any filter do not process it
-						if (!ipFilters.ContainsKey(remoteEP.Address.ToString()))
+						if (!_ipFilters.ContainsKey(remoteEp.Address.ToString()))
 						{
 							RegisterReceiveOperation();
 							return;
 						}
 
 						string[] parsedMsg = null;
-						if (ipFilters[remoteEP.Address.ToString()].ParserClassName != null)
+						if (_ipFilters[remoteEp.Address.ToString()].ParserClassName != null)
 						{
 							try
 							{
                                 // Parse the message using the parser defined for IP from where the message came
-								parsedMsg = ipFilters[remoteEP.Address.ToString()].GetParser().Parse(sm);
+								parsedMsg = _ipFilters[remoteEp.Address.ToString()].GetParser().Parse(sm);
 							}
 							catch (Exception ex)
 							{
-								EventLogger.LogEvent("Could not get parser or parse message for ip " + remoteEP.Address.ToString()
+								EventLogger.LogEvent("Could not get parser or parse message for ip " + remoteEp.Address.ToString()
 									+ " because: " + ex.Message, System.Diagnostics.EventLogEntryType.Warning);
 							}
 						}
 
                         // Add the message to the LogBuffer if a storage Class is defined and message was parsed successfully.
-						if (parsedMsg != null && buffer != null && ipFilters[remoteEP.Address.ToString()].StorerClassName != null)
+						if (parsedMsg != null && _buffer != null && _ipFilters[remoteEp.Address.ToString()].StorerClassName != null)
 						{
-							buffer.AddEntry(ipFilters[remoteEP.Address.ToString()].AssemblyName, parsedMsg);
+							_buffer.AddEntry(_ipFilters[remoteEp.Address.ToString()].AssemblyName, parsedMsg);
 						}
 					}
 					catch (Exception ex)
@@ -477,21 +476,21 @@ namespace Syslog.Server
         /// </summary>
 		public void Stop()
 		{
-			if (this.socket != null)
+			if (_socket != null)
 			{
-				this.socket.Close();
-				this.socket = null;
+				_socket.Close();
+				_socket = null;
 			}
 
-			if (this.sendSocket != null)
+			if (_sendSocket != null)
 			{
-				this.sendSocket.Close();
-				this.sendSocket = null;
+				_sendSocket.Close();
+				_sendSocket = null;
 			}
 
-			if (buffer != null)
+			if (_buffer != null)
 			{
-				buffer.Flush();
+				_buffer.Flush();
 			}
 		}
 
