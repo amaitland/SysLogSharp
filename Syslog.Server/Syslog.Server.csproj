@@ -55,11 +55,12 @@
     <Compile Include="Console\IConsole.cs" />
     <Compile Include="Console\MessageReceivedCallbackSink.cs" />
     <Compile Include="Console\SysLogServer.cs" />
-    <Compile Include="DatabaseStorer.cs" />
+    <Compile Include="AbstractDatabaseDataStore.cs" />
     <Compile Include="EventLogger.cs" />
     <Compile Include="FacilityCode.cs" />
+    <Compile Include="IListener.cs" />
     <Compile Include="IParser.cs" />
-    <Compile Include="IStorer.cs" />
+    <Compile Include="IDataStore.cs" />
     <Compile Include="Listener.cs" />
     <Compile Include="LogBuffer.cs" />
     <Compile Include="MessageHandler.cs" />

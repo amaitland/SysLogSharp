@@ -193,7 +193,7 @@ namespace Syslog.Server
                     try
                     {
                         // Get a refence to the storer interface of the handler
-                        IStorer storer = handlers[enumer.Current].GetStorer() as IStorer;
+                        var storer = handlers[enumer.Current].GetStorer();
 
                         if (storer != null)
                         {
@@ -234,9 +234,9 @@ namespace Syslog.Server
 
             if (obj != null)
             {
-                using (MemoryStream ms = new MemoryStream())
+                using (var ms = new MemoryStream())
                 {
-                    BinaryFormatter formatter = new BinaryFormatter();
+                    var formatter = new BinaryFormatter();
                     formatter.Serialize(ms, obj);
                     ms.Position = 0;
 

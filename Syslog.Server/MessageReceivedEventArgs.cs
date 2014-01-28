@@ -15,8 +15,6 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Syslog.Server
 {
@@ -25,7 +23,7 @@ namespace Syslog.Server
     /// </summary>
     public class MessageReceivedEventArgs : EventArgs
     {
-        private SyslogMessage syslogMessage;
+        private readonly SyslogMessage syslogMessage;
         /// <summary>
         /// Returns the syslog message as received from the remote host.
         /// </summary>
@@ -41,7 +39,7 @@ namespace Syslog.Server
         public MessageReceivedEventArgs(SyslogMessage sm)
             : base()
         {
-            this.syslogMessage = sm;
+            syslogMessage = sm;
         }
     }
 }

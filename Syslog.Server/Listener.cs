@@ -47,10 +47,9 @@ namespace Syslog.Server
     /// Messages that do not match the RFC 3164 specification are discarded and the next message is processed.
     /// An instance of the <see cref="LogBuffer"/> is also maintained by the listener.
     /// </remarks>
-	public sealed class Listener
+	public sealed class Listener : IListener
 	{
-		public delegate void MessageReceivedEventHandler(MessageReceivedEventArgs e);
-		public event MessageReceivedEventHandler MessageReceived;
+		public event Action<MessageReceivedEventArgs> MessageReceived;
 
 		private LogBuffer buffer;
         private int logBufferFlushFrequency = 30;
@@ -424,7 +423,7 @@ namespace Syslog.Server
 
 					try
 					{
-						SyslogMessage sm = new SyslogMessage(priority, timestamp.Value, hostname, message);
+						var sm = new SyslogMessage(priority, timestamp.Value, hostname, message);
 
                         // Ensure that a handler is defined for the MessageReceived event
 						if (MessageReceived != null)

@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License along with Syslog Sharp. If not, see http://www.gnu.org/licenses/.
 */
 
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Syslog.Server
@@ -21,15 +22,15 @@ namespace Syslog.Server
     /// <summary>
     /// Base class for all storage classes that use a connection string.  This class is thread-safe.
     /// </summary>
-	public class DatabaseStorer
+	public abstract class AbstractDatabaseDataStore : IDataStore
 	{
         /// <summary>
         /// Creates a new instance of the class.
         /// </summary>
         /// <param name="connectionString">The used to connect to a data store.</param>
-		public DatabaseStorer(string connectionString)
+        protected AbstractDatabaseDataStore(string connectionString)
 		{
-			this.ConnectionString = connectionString;
+			ConnectionString = connectionString;
 		}
 
 		private string connectionString;
@@ -61,5 +62,7 @@ namespace Syslog.Server
 				}
 			}
 		}
+
+	    public abstract bool StoreMessages(IEnumerable<string[]> messages);
 	}
 }

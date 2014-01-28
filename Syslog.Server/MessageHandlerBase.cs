@@ -30,14 +30,14 @@ namespace Syslog.Server
         IParser parser;
 
         private Type storerType;
-        IStorer storer;
+        IDataStore _dataStore;
 
         /// <summary>
         /// Creates a new instance of the class.
         /// </summary>
         /// <param name="assemblyName">The full compiled name of the handler assembly.</param>
         /// <param name="parserClassName">The name of the class that implements the <see cref="IParser"/> interface in the assembly.</param>
-        /// <param name="storerClassName">The name of the class that implements the <see cref="IStorer"/> interface in the assembly.</param>
+        /// <param name="storerClassName">The name of the class that implements the <see cref="IDataStore"/> interface in the assembly.</param>
         /// <param name="connectionString">The connection string, if required, for the storer class.  This parameter can be null.</param>
         public MessageHandlerBase(string assemblyName, string parserClassName, string storerClassName, string connectionString)
         {
@@ -69,7 +69,7 @@ namespace Syslog.Server
 
         private string storerClassName;
         /// <summary>
-        /// Gets or sets the name of the class that implements the <see cref="IStorer"/> interface in the assembly.
+        /// Gets or sets the name of the class that implements the <see cref="IDataStore"/> interface in the assembly.
         /// </summary>
         public string StorerClassName
         {
@@ -139,10 +139,10 @@ namespace Syslog.Server
         /// <summary>
         /// Gets a reference to the class in the <see cref="AssemblyName"/> that matches <see cref="StorerClassName"/>.
         /// </summary>
-        /// <returns>Returns the <see cref="IStorer"/> class reference.</returns>
-        public IStorer GetStorer()
+        /// <returns>Returns the <see cref="IDataStore"/> class reference.</returns>
+        public IDataStore GetStorer()
         {
-            if (storer == null)
+            if (_dataStore == null)
             {
                 if (storerType == null)
                 {
@@ -160,19 +160,19 @@ namespace Syslog.Server
                     }
                 }
 
-                if (storerType != null && storer == null)
+                if (storerType != null && _dataStore == null)
                 {
-                    if (storerType.BaseType == typeof(DatabaseStorer))
+                    if (storerType.BaseType == typeof(AbstractDatabaseDataStore))
                     {
-                        storer = (IStorer)Activator.CreateInstance(storerType, this.ConnectionString);
+                        _dataStore = (IDataStore)Activator.CreateInstance(storerType, ConnectionString);
                     }
                     else
                     {
-                        storer = (IStorer)Activator.CreateInstance(storerType);
+                        _dataStore = (IDataStore)Activator.CreateInstance(storerType);
                     }
                 }
             }
-            return storer;
+            return _dataStore;
         }
     }
 }

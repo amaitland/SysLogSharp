@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License along with Syslog Sharp. If not, see http://www.gnu.org/licenses/.
 */
 
+using System;
 using Syslog.Server;
 
 namespace Syslog.GenericFilter
@@ -37,6 +38,8 @@ namespace Syslog.GenericFilter
 
             string[] msgParts = message.Message.Split(' ');
             string[] msg = null;
+
+			Console.WriteLine(message.Message);
 
 	        return msgParts;
 

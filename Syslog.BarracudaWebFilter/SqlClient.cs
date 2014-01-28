@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Data.SqlClient;
 using Syslog.Server;
 
@@ -25,7 +24,7 @@ namespace Syslog.BarracudaWebFilter
     /// <summary>
     /// Class used to store messages to a Microsoft SQL Server
     /// </summary>
-    public class SqlClient : DatabaseStorer, IStorer
+    public class SqlClient : AbstractDatabaseDataStore, IDataStore
     {
         /// <summary>
         /// Creates a new instance of the class.
@@ -37,22 +36,11 @@ namespace Syslog.BarracudaWebFilter
         }
 
         /// <summary>
-        /// Processes the queue of messages to a data store.
-        /// </summary>
-        /// <param name="buffer">The <see cref="Queue<string[]>"/> of messages.</param>
-        internal void ProcessBuffer(Queue<string[]> buffer)
-        {
-            ((IStorer)this).StoreMessages(buffer);
-        }
-
-
-        #region IStorer Members
-        /// <summary>
         /// Processes an enumerable list of messages to a data store.
         /// </summary>
         /// <param name="messages">An enumerable type of messages.</param>
         /// <returns>Return true if processes was successful.</returns>
-        bool IStorer.StoreMessages(IEnumerable<string[]> messages)
+        public override bool StoreMessages(IEnumerable<string[]> messages)
         {
             bool ok = true;
 
@@ -125,7 +113,5 @@ namespace Syslog.BarracudaWebFilter
 
             return ok;
         }
-
-        #endregion
     }
 }

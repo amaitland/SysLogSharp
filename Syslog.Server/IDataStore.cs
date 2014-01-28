@@ -14,9 +14,6 @@
  * You should have received a copy of the GNU General Public License along with Syslog Sharp. If not, see http://www.gnu.org/licenses/.
 */
 
-using System.Collections;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Collections.Generic;
 
 namespace Syslog.Server
@@ -24,7 +21,7 @@ namespace Syslog.Server
     /// <summary>
     /// Base interface for writing messages to a data store.
     /// </summary>
-    public interface IStorer
+    public interface IDataStore
     {
         /// <summary>
         /// Processes an enumerable object of parsed messages.

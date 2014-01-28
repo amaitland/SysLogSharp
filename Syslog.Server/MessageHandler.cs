@@ -30,7 +30,7 @@ namespace Syslog.Server
         /// </summary>
         /// <param name="assemblyName">The full compiled name of the handler assembly.</param>
         /// <param name="parserClassName">The name of the class that implements the <see cref="IParser"/> interface in the assembly.</param>
-        /// <param name="storerClassName">The name of the class that implements the <see cref="IStorer"/> interface in the assembly.</param>
+        /// <param name="storerClassName">The name of the class that implements the <see cref="IDataStore"/> interface in the assembly.</param>
         /// <param name="connectionString">The connection string, if required, for the storer class.  This parameter can be null.</param>
         public MessageHandler(string assemblyName, string parserClassName, string storerClassName, string connectionString)
             : base(assemblyName, parserClassName, storerClassName, connectionString)

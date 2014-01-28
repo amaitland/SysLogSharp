@@ -29,7 +29,7 @@ namespace Syslog.Server.Config
         /// Creates a new <see cref="HandlerConfiguration"/>.
         /// </summary>
         /// <param name="assemblyName">The fully compiled name of the assembly.</param>
-        /// <param name="storageClassName">The name of class that implements the <see cref="IStorer"/> interface.</param>
+        /// <param name="storageClassName">The name of class that implements the <see cref="IDataStore"/> interface.</param>
         /// <param name="parserClassName">The name of the class that implements the <see cref="IParser"/> interface.</param>
         /// <param name="filterIPAddresses">A comma or semi-colon seperated list of IPv4 addresses to listen for messages from.</param>
         /// <param name="connectionString">The connection string to connect to the data store used by the <paramref name="storageClassName"/>, if required.</param>
@@ -57,7 +57,7 @@ namespace Syslog.Server.Config
         }
 
         /// <summary>
-        /// Gets or sets the name of class that implements the <see cref="IStorer"/> interface.
+        /// Gets or sets the name of class that implements the <see cref="IDataStore"/> interface.
         /// </summary>
         [ConfigurationProperty("storageClassName", IsRequired = false)]
         public string StorageClassName

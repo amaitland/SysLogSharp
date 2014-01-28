@@ -24,7 +24,7 @@ namespace Syslog.GenericFilter
     /// <summary>
     /// Class used to store messages to a Microsoft SQL Server
     /// </summary>
-    public class SqlClient : DatabaseStorer, IStorer
+    public class SqlClient : AbstractDatabaseDataStore, IDataStore
     {
         /// <summary>
         /// Creates a new instance of the class.
@@ -40,7 +40,7 @@ namespace Syslog.GenericFilter
         /// </summary>
         /// <param name="messages">An enumerable type of messages.</param>
         /// <returns>Return true if processes was successful.</returns>
-        public bool StoreMessages(IEnumerable<string[]> messages)
+        public override bool StoreMessages(IEnumerable<string[]> messages)
         {
 			throw new NotImplementedException();
 

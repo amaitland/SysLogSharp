@@ -29,22 +29,32 @@ namespace Syslog.Server.Console
     /// </summary>
     public class SysLogServer
     {
-	    private readonly Listener _listener;
+		private readonly IListener _listener;
 	    private IpcChannel _channel;
 
         /// <summary>
         /// Creates a new instace of the class.
         /// </summary>
-        public SysLogServer(Listener listener)
+		public SysLogServer(IListener listener)
         {
 	        _listener = listener;
+
+			if (_listener == null)
+			{
+				throw new ArgumentNullException("listener");
+			}
         }
 
 	    /// <summary>
         /// Sets up the services remoting channel
         /// </summary>
-        public void Start()
+        public bool Start()
         {
+			if (!_listener.Start())
+			{
+				return false;
+			}
+			
             try
             {
                 var props = new Hashtable();
@@ -70,12 +80,16 @@ namespace Syslog.Server.Console
 
                 // Assign the event to a handler
 				_listener.MessageReceived += Listener_MessageReceived;
+
+	            return true;
             }
             catch (Exception ex)
             {
                 EventLogger.LogEvent("Could not create a named pipe because: " + ex.Message + Environment.NewLine + "Communication with the GUI console will be disabled.",
                     System.Diagnostics.EventLogEntryType.Warning);
             }
+
+		    return false;
         }
 
         /// <summary>
@@ -92,6 +106,11 @@ namespace Syslog.Server.Console
         /// </summary>
         public void Stop()
         {
+			if (_listener != null)
+			{
+				_listener.Stop();
+			}
+
             if (_channel != null)
             {
                 try

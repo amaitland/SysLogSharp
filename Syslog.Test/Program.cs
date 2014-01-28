@@ -23,33 +23,31 @@ namespace Syslog.Test
 {
     public class Program
     {
-		private static readonly GenericParser p = new GenericParser();
+		private static readonly GenericParser Parser = new GenericParser();
 
 		public static void Main(string[] args)
+		{
+			var listener = new Listener(System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"],
+			                            Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["listenPort"]),
+			                            Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["bufferFlushFrequency"]));
+
+			listener.MessageReceived += MessageReceived;
+
+			var consoleServer = new SysLogServer(listener);
+			if (consoleServer.Start())
+			{
+				Console.WriteLine("Listener Started.  Press any key to stop listener");
+				Console.WriteLine("Console server started.");
+
+				Console.ReadLine();
+			}
+			
+			consoleServer.Stop();
+		}
+
+	    private static void MessageReceived(MessageReceivedEventArgs e)
         {
-            var listener = new Listener(System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"],
-                    Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["listenPort"]),
-                    Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["bufferFlushFrequency"]));
-
-            var consoleServer = new SysLogServer(listener);
-
-            if (listener.Start())
-            {
-                listener.MessageReceived += MessageReceived;
-                Console.WriteLine("Listener Started.  Press any key to stop listener");
-
-                consoleServer.Start();
-                Console.WriteLine("Console server started.");
-            }
-
-            Console.ReadLine();
-            listener.Stop();
-            consoleServer.Stop();
-        }
-
-        private static void MessageReceived(MessageReceivedEventArgs e)
-        {
-            Console.WriteLine(p.Parse(e.SyslogMessage));
+            Console.WriteLine(Parser.Parse(e.SyslogMessage));
         }
     }
 }

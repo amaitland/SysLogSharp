@@ -6,7 +6,7 @@
     <ProductVersion>8.0.50727</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{18E7B003-EBD6-4413-98DB-5D663173A6ED}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Syslog.Service</RootNamespace>
     <AssemblyName>Syslog.Service</AssemblyName>
@@ -40,6 +40,9 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -67,6 +70,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Syslog.GenericFilter\Syslog.GenericFilter.csproj">
+      <Project>{d9c405cc-9cb0-4f71-9728-a5aa9fe891c3}</Project>
+      <Name>Syslog.GenericFilter</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Syslog.Server\Syslog.Server.csproj">
       <Project>{9D39D0CF-55FF-43E9-A64F-9C720937116D}</Project>
       <Name>Syslog.Server</Name>

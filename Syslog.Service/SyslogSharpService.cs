@@ -35,17 +35,11 @@ namespace Syslog.Service
         {
             if (_listener == null)
             {
-
-				_listener = new Listener(System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"],
-                    Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["listenPort"]),
-                    Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["bufferFlushFrequency"]));
-            }
-
-            if (!_listener.Start())
-            {
-                OnStop();
-
-                return;
+	            var ipAddress = System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"];
+	            var port = Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["listenPort"]);
+	            var flushFrequency = Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["bufferFlushFrequency"]);
+				
+				_listener = new Listener(ipAddress, port, flushFrequency);
             }
 
             if (_sysLogServer == null)
@@ -58,11 +52,6 @@ namespace Syslog.Service
 
         protected override void OnStop()
         {
-            if (_listener != null)
-            {
-                _listener.Stop();
-            }
-
             if (_sysLogServer != null)
             {
                 _sysLogServer.Stop();
