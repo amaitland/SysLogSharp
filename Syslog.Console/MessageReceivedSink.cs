@@ -14,9 +14,6 @@
  * You should have received a copy of the GNU General Public License along with Syslog Sharp. If not, see http://www.gnu.org/licenses/.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Syslog.Server;
 using Syslog.Server.Console;
 
@@ -25,7 +22,7 @@ namespace Syslog.Console
     /// <summary>
     /// The event handler of the server's Message Received event
     /// </summary>
-    internal class MessageReceivedSink : Syslog.Server.Console.MessageReceivedCallbackSink
+    internal class MessageReceivedSink : MessageReceivedCallbackSink
     {
         public static event MessageReceivedCallback OnServerMessageReceived;
 

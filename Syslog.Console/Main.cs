@@ -41,7 +41,7 @@ namespace Syslog.Console
             client = new ConsoleServerClient();
             client.Connect();
             // Register the remoted event handler
-            MessageReceivedSink.OnServerMessageReceived += new Syslog.Server.Console.MessageReceivedCallback(MessageReceivedSink_OnServerMessageReceived);
+            MessageReceivedSink.OnServerMessageReceived += MessageReceivedSink_OnServerMessageReceived;
         }
 
         void MessageReceivedSink_OnServerMessageReceived(SyslogMessage message)

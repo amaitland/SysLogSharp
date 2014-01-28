@@ -15,60 +15,57 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
 using System.ServiceProcess;
-using System.Text;
+using Syslog.Server;
+using Syslog.Server.Console;
 
 namespace Syslog.Service
 {
-    public partial class SyslogServer : ServiceBase
+    public partial class SyslogSharpService : ServiceBase
     {
-        private Syslog.Server.Listener server;
-        private Syslog.Server.Console.Server consoleServer;
+        private Listener _listener;
+        private SysLogServer _sysLogServer;
 
-        public SyslogServer()
+        public SyslogSharpService()
         {
             InitializeComponent();
         }
 
         protected override void OnStart(string[] args)
         {
-            if (server == null)
+            if (_listener == null)
             {
 
-                server = Syslog.Server.Listener.CreateInstance(System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"],
+				_listener = new Listener(System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"],
                     Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["listenPort"]),
                     Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["bufferFlushFrequency"]));
             }
 
-            if (!server.Start())
+            if (!_listener.Start())
             {
-                this.OnStop();
+                OnStop();
 
                 return;
             }
 
-            if (consoleServer == null)
+            if (_sysLogServer == null)
             {
-                consoleServer = new Syslog.Server.Console.Server();
+				_sysLogServer = new SysLogServer(_listener);
             }
 
-            consoleServer.Start();
+            _sysLogServer.Start();
         }
 
         protected override void OnStop()
         {
-            if (server != null)
+            if (_listener != null)
             {
-                server.Stop();
+                _listener.Stop();
             }
 
-            if (consoleServer != null)
+            if (_sysLogServer != null)
             {
-                consoleServer.Stop();
+                _sysLogServer.Stop();
             }
         }
     }

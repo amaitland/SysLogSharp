@@ -35,7 +35,6 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
 using Syslog.Server.Config;
 
 namespace Syslog.Server
@@ -51,9 +50,7 @@ namespace Syslog.Server
 	public sealed class Listener
 	{
 		public delegate void MessageReceivedEventHandler(MessageReceivedEventArgs e);
-		public static event MessageReceivedEventHandler MessageReceived;
-
-		private static Listener _instance = null;
+		public event MessageReceivedEventHandler MessageReceived;
 
 		private LogBuffer buffer;
         private int logBufferFlushFrequency = 30;
@@ -67,7 +64,7 @@ namespace Syslog.Server
 		private const int RECEIVE_BUFFER_SIZE = 1024;
 
 		private byte[] receiveBuffer = new Byte[RECEIVE_BUFFER_SIZE];
-		private EndPoint remoteEndpoint = null;
+		private EndPoint remoteEndpoint;
 		private Regex msgRegex = new Regex(@"
 (\<(?<PRI>\d{1,3})\>){0,1}
 (?<HDR>
@@ -88,7 +85,7 @@ namespace Syslog.Server
         /// </summary>
         /// <param name="listenIPAddress">A valid IPv4 address.</param>
         /// <param name="listenPort">A valid port value from 1 to 65535</param>
-        private Listener(string listenIPAddress, int listenPort, int logFlushFrequency)
+        public Listener(string listenIPAddress, int listenPort, int logFlushFrequency)
         {
             if (listenIPAddress == null)
             {
@@ -120,31 +117,6 @@ namespace Syslog.Server
             this.listenAddress = tempIP;
             this.SYSLOG_PORT = listenPort;
             this.logBufferFlushFrequency = logFlushFrequency;
-		}
-
-        /// <summary>
-        /// Creates an instance of the Listener if one does not already exist.
-        /// </summary>
-        /// <param name="listenIPAddress">A valid IPv4 address.</param>
-        /// <param name="listenPort">A valid port value from 1 to 65535.</param>
-        /// <returns>Returns a Listner object.</returns>
-        public static Listener CreateInstance(string listenIPAddress, int listenPort, int logFlushFrequency)
-        {
-            if (_instance == null)
-            {
-                _instance = new Listener(listenIPAddress, listenPort, logFlushFrequency);
-            }
-
-            return _instance;
-        }
-
-        /// <summary>
-        /// Gets an instance of the Listener.
-        /// </summary>
-        /// <returns>Returns a Listner object.</returns>
-		public static Listener GetInstance()
-		{
-			return _instance;
 		}
 
         /// <summary>

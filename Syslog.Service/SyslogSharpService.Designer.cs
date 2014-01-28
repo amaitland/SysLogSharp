@@ -1,6 +1,6 @@
 namespace Syslog.Service
 {
-    partial class SyslogServer
+    partial class SyslogSharpService
     {
         /// <summary> 
         /// Required designer variable.
@@ -29,7 +29,7 @@ namespace Syslog.Service
         private void InitializeComponent()
         {
             // 
-            // SyslogServer
+            // SyslogSharpService
             // 
             this.ServiceName = "Syslog Sharp Service";
 

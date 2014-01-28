@@ -14,30 +14,67 @@
  * You should have received a copy of the GNU General Public License along with Syslog Sharp. If not, see http://www.gnu.org/licenses/.
 */
 
+using System;
 using System.Collections.Generic;
 using System.ServiceProcess;
-using System.Text;
+using Syslog.Service.Installer;
 
 namespace Syslog.Service
 {
-    static class Program
+    public static class Program
     {
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
-        static void Main()
+		public static void Main(string[] args)
         {
-            ServiceBase[] ServicesToRun;
+			Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
-            // More than one user Service may run within the same process. To add
-            // another service to this process, change the following line to
-            // create a second service object. For example,
-            //
-            //   ServicesToRun = new ServiceBase[] {new Service1(), new MySecondUserService()};
-            //
-            ServicesToRun = new ServiceBase[] { new SyslogServer() };
-
-            ServiceBase.Run(ServicesToRun);
+			if (args.Length > 0)
+			{
+				// Parse the command line args
+				var install = ParseCommandLine(args);
+				if (install == true)
+				{
+					InstallationManager.Install(args);
+				}
+				else if (install == false)
+				{
+					InstallationManager.Uninstall(args);
+				}
+				else
+				{
+					Console.WriteLine("Invalid command line args -i for install or -u for uninstall");
+				}
+			}
+			else
+			{
+				var servicesToRun = new ServiceBase[] { new SyslogSharpService() };
+				ServiceBase.Run(servicesToRun);
+			}
         }
+
+		private static bool? ParseCommandLine(IEnumerable<string> commandLine)
+		{
+			foreach (var arg in commandLine)
+			{
+				var argument = arg.ToLower();
+				switch (argument)
+				{
+					case "-i":
+					case "-install":
+					{
+						return true;
+					}
+					case "-u":
+					case "-uninstall":
+					{
+						return false;
+					}
+				}
+			}
+
+			return null;
+		}
     }
 }

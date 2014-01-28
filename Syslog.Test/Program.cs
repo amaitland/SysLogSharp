@@ -15,27 +15,27 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
+using Syslog.GenericFilter;
 using Syslog.Server;
+using Syslog.Server.Console;
 
 namespace Syslog.Test
 {
-    class Program
+    public class Program
     {
-        static Syslog.BarracudaWebFilter.Parser p = new Syslog.BarracudaWebFilter.Parser();
+		private static readonly GenericParser p = new GenericParser();
 
-        static void Main(string[] args)
+		public static void Main(string[] args)
         {
-            Listener l = Listener.CreateInstance(System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"],
+            var listener = new Listener(System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"],
                     Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["listenPort"]),
                     Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["bufferFlushFrequency"]));
 
-            Syslog.Server.Console.Server consoleServer = new Syslog.Server.Console.Server();
+            var consoleServer = new SysLogServer(listener);
 
-            if (l.Start())
+            if (listener.Start())
             {
-                Listener.MessageReceived += new Listener.MessageReceivedEventHandler(l_MessageReceived);
+                listener.MessageReceived += MessageReceived;
                 Console.WriteLine("Listener Started.  Press any key to stop listener");
 
                 consoleServer.Start();
@@ -43,14 +43,13 @@ namespace Syslog.Test
             }
 
             Console.ReadLine();
-            l.Stop();
+            listener.Stop();
             consoleServer.Stop();
         }
 
-        static void l_MessageReceived(MessageReceivedEventArgs e)
+        private static void MessageReceived(MessageReceivedEventArgs e)
         {
-            //Console.WriteLine(e.SyslogMessage.ToString());
-            Console.WriteLine((((IParser)p).Parse(e.SyslogMessage)));
+            Console.WriteLine(p.Parse(e.SyslogMessage));
         }
     }
 }

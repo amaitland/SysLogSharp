@@ -14,9 +14,6 @@
  * You should have received a copy of the GNU General Public License along with Syslog Sharp. If not, see http://www.gnu.org/licenses/.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Configuration;
 
 namespace Syslog.Server.Config
@@ -26,11 +23,7 @@ namespace Syslog.Server.Config
     /// </summary>
     public class HandlerSection : ConfigurationSection
     {
-        public HandlerSection() : base()
-        { }
-
-        [ConfigurationProperty("handlers", IsDefaultCollection=false),
-       ConfigurationCollection(typeof(HandlerCollection), AddItemName = "add", ClearItemsName = "clear", RemoveItemName = "handlerSection")]
+	    [ConfigurationProperty("handlers", IsDefaultCollection=false), ConfigurationCollection(typeof(HandlerCollection), AddItemName = "add", ClearItemsName = "clear", RemoveItemName = "handlerSection")]
         public HandlerCollection Handlers
         {
             get { return base["handlers"] as HandlerCollection; }

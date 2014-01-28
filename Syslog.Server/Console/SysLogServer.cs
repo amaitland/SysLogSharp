@@ -15,9 +15,7 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Collections;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Ipc;
@@ -29,31 +27,32 @@ namespace Syslog.Server.Console
     /// <summary>
     /// Methods for setting up the services remoting communication channel.
     /// </summary>
-    public class Server
+    public class SysLogServer
     {
-        IpcChannel channel = null;
+	    private readonly Listener _listener;
+	    private IpcChannel _channel;
 
         /// <summary>
         /// Creates a new instace of the class.
         /// </summary>
-        public Server()
+        public SysLogServer(Listener listener)
         {
-
+	        _listener = listener;
         }
-        
-        /// <summary>
+
+	    /// <summary>
         /// Sets up the services remoting channel
         /// </summary>
         public void Start()
         {
             try
             {
-                System.Collections.Hashtable props = new System.Collections.Hashtable();
+                var props = new Hashtable();
                 props["typeFilterLevel"] = "Full";
 
                 // Both formatters only use the typeFilterLevel property
-                BinaryClientFormatterSinkProvider cliFormatter = new BinaryClientFormatterSinkProvider(props, null);
-                BinaryServerFormatterSinkProvider srvFormatter = new BinaryServerFormatterSinkProvider(props, null);
+                var cliFormatter = new BinaryClientFormatterSinkProvider(props, null);
+                var srvFormatter = new BinaryServerFormatterSinkProvider(props, null);
 
                 // The channel requires these to be set that it can found by name by clients
                 props["name"] = "SyslogConsole";
@@ -61,17 +60,16 @@ namespace Syslog.Server.Console
                 props["authorizedGroup"] = "Everyone";
 
                 // Create the channel
-                channel = new IpcChannel(props, cliFormatter, srvFormatter);
-                channel.IsSecured = false;
+                _channel = new IpcChannel(props, cliFormatter, srvFormatter) {IsSecured = false};
 
-                // Register the channel in the Windows IPC list
-                ChannelServices.RegisterChannel(channel, false);
+	            // Register the channel in the Windows IPC list
+                ChannelServices.RegisterChannel(_channel, false);
 
                 // Register the channel for remoting use
                 RemotingConfiguration.RegisterWellKnownServiceType(typeof(ClientMethods), "Server", WellKnownObjectMode.Singleton);
 
                 // Assign the event to a handler
-                Listener.MessageReceived += new Listener.MessageReceivedEventHandler(Listener_MessageReceived);
+				_listener.MessageReceived += Listener_MessageReceived;
             }
             catch (Exception ex)
             {
@@ -84,7 +82,7 @@ namespace Syslog.Server.Console
         /// Raise the message received event for listening clients.
         /// </summary>
         /// <param name="e">Event data.</param>
-        void Listener_MessageReceived(MessageReceivedEventArgs e)
+        private void Listener_MessageReceived(MessageReceivedEventArgs e)
         {
             ClientMethods.FireNewMessageReceived(e.SyslogMessage);
         }
@@ -94,11 +92,11 @@ namespace Syslog.Server.Console
         /// </summary>
         public void Stop()
         {
-            if (channel != null)
+            if (_channel != null)
             {
                 try
                 {
-                    ChannelServices.UnregisterChannel(channel);
+                    ChannelServices.UnregisterChannel(_channel);
                 }
                 catch (Exception ex)
                 {
