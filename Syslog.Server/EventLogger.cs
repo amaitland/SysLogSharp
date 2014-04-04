@@ -24,10 +24,10 @@ namespace Syslog.Server
     /// </summary>
     public static class EventLogger
     {
-        private static readonly string source = "Syslog Service";
-        private static readonly string logName = "Application";
+	    private const string Source = "Syslog Service";
+	    private const string LogName = "Application";
 
-        /// <summary>
+	    /// <summary>
         /// Writes the <paramref name="message"/> to the Application event log with the given severity (<paramref name="entryType"/>).
         /// </summary>
         /// <param name="message">The message text to log.</param>
@@ -36,12 +36,12 @@ namespace Syslog.Server
         {
             try
             {
-                if (!EventLog.SourceExists(source))
+                if (!EventLog.SourceExists(Source))
                 {
-                    EventLog.CreateEventSource(source, logName);
+                    EventLog.CreateEventSource(Source, LogName);
                 }
 
-                EventLog.WriteEntry(source, message, entryType);
+                EventLog.WriteEntry(Source, message, entryType);
             }
             catch (Exception)
             {

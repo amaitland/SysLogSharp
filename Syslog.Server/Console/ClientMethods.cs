@@ -23,7 +23,7 @@ namespace Syslog.Server.Console
     /// </summary>
     public class ClientMethods : MarshalByRefObject, IConsole
     {
-        private static event MessageReceivedCallback _eventSubscribers;
+        private static event MessageReceivedCallback EventSubscribers;
 
         #region IConsole Members
 
@@ -32,8 +32,8 @@ namespace Syslog.Server.Console
         /// </summary>
         public event MessageReceivedCallback MessageHandled
         {
-            add { _eventSubscribers += value; }
-            remove { _eventSubscribers -= value; }
+            add { EventSubscribers += value; }
+            remove { EventSubscribers -= value; }
         }
 
         #endregion
@@ -44,11 +44,11 @@ namespace Syslog.Server.Console
         /// <param name="message">The syslog message to use when raising the event.</param>
         public static void FireNewMessageReceived(SyslogMessage message)
         {
-            if (_eventSubscribers != null)
+            if (EventSubscribers != null)
             {
                 try
                 {
-                    _eventSubscribers(message);
+                    EventSubscribers(message);
                 }
                 catch (System.Runtime.Remoting.RemotingException)
                 {

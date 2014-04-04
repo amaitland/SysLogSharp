@@ -15,8 +15,7 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Collections;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Ipc;
@@ -29,36 +28,29 @@ namespace Syslog.Console
     /// </summary>
     public class ConsoleServerClient
     {
-        IpcChannel channel;
-        MessageReceivedCallbackSink sink;
-        ClientMethods remoter;
+        private IpcChannel _channel;
+		private MessageReceivedCallbackSink _sink;
+		private ClientMethods _remoter;
 
-        /// <summary>
-        /// Creates a new instance of the class.
-        /// </summary>
-        public ConsoleServerClient()
-        {
-        }
-
-        private bool isConnected;
+	    private bool _isConnected;
         /// <summary>
         /// Gets or sets the connected state of the client.
         /// </summary>
         public bool IsConnected
         {
-            get { return isConnected; }
-            set { isConnected = value; }
+            get { return _isConnected; }
+            set { _isConnected = value; }
         }
 
-        private bool isPaused;
+        private bool _isPaused;
         /// <summary>
         /// Gets or sets the paused state of client
         /// </summary>
         /// <remarks>If <see cref="IsPaused"/> is true then the client does not receive event from the service.</remarks>
         public bool IsPaused
         {
-            get { return isPaused; }
-            set { isPaused = value; }
+            get { return _isPaused; }
+            set { _isPaused = value; }
         }
 
         /// <summary>
@@ -66,16 +58,16 @@ namespace Syslog.Console
         /// </summary>
         public void Connect()
         {
-            if (this.isConnected) { return; }
+            if (_isConnected) { return; }
 
             try
             {
-                System.Collections.Hashtable props = new System.Collections.Hashtable();
+                var props = new Hashtable();
                 props["typeFilterLevel"] = "Full";
 
                 // Both formatters only use the typeFilterLevel property
-                BinaryClientFormatterSinkProvider cliFormatter = new BinaryClientFormatterSinkProvider(props, null);
-                BinaryServerFormatterSinkProvider srvFormatter = new BinaryServerFormatterSinkProvider(props, null);
+                var cliFormatter = new BinaryClientFormatterSinkProvider(props, null);
+                var srvFormatter = new BinaryServerFormatterSinkProvider(props, null);
 
                 // The channel requires these to be set that it can found by name by the service
                 props["name"] = "ConsoleClient";
@@ -83,27 +75,26 @@ namespace Syslog.Console
                 props["authorizedGroup"] = "Everyone";
 
                 // Create the channel
-                channel = new IpcChannel(props, cliFormatter, srvFormatter);
+                _channel = new IpcChannel(props, cliFormatter, srvFormatter);
 
                 // Register the channel for remoting use
-                System.Runtime.Remoting.Channels.ChannelServices.RegisterChannel(channel, false);
+                ChannelServices.RegisterChannel(_channel, false);
 
                 // Create the refence to the service's remoting channel
-                remoter = (ClientMethods)Activator.GetObject(typeof(ClientMethods), "ipc://SyslogConsole/Server");
+                _remoter = (ClientMethods)Activator.GetObject(typeof(ClientMethods), "ipc://SyslogConsole/Server");
 
                 // Register the MessageReceivedCallback event on the handler
-                RemotingConfiguration.RegisterWellKnownServiceType(typeof(MessageReceivedCallbackSink),
-                    "ServerEvents", WellKnownObjectMode.Singleton);
+                RemotingConfiguration.RegisterWellKnownServiceType(typeof(MessageReceivedCallbackSink), "ServerEvents", WellKnownObjectMode.Singleton);
 
                 // Setup the event subscription
-                sink = new MessageReceivedSink();
-                remoter.MessageHandled += new MessageReceivedCallback(sink.FireMessageReceived);
+                _sink = new MessageReceivedSink();
+                _remoter.MessageHandled += _sink.FireMessageReceived;
 
-                this.isConnected = true;
+                _isConnected = true;
             }
             catch
             {
-                this.isConnected = false;
+                _isConnected = false;
             }
         }
 
@@ -114,7 +105,7 @@ namespace Syslog.Console
         {
             try
             {
-                remoter.MessageHandled -= new MessageReceivedCallback(sink.FireMessageReceived);
+                _remoter.MessageHandled -= _sink.FireMessageReceived;
             }
             catch (Exception)
             {
@@ -122,7 +113,7 @@ namespace Syslog.Console
             }
             finally
             {
-                this.isPaused = true;
+                _isPaused = true;
             }
         }
 
@@ -133,7 +124,7 @@ namespace Syslog.Console
         {
             try
             {
-                remoter.MessageHandled += new MessageReceivedCallback(sink.FireMessageReceived);
+                _remoter.MessageHandled += _sink.FireMessageReceived;
             }
             catch (Exception)
             {
@@ -141,7 +132,7 @@ namespace Syslog.Console
             }
             finally
             {
-                this.isPaused = false;
+                _isPaused = false;
             }
         }
 
@@ -150,13 +141,13 @@ namespace Syslog.Console
         /// </summary>
         public void Disconnect()
         {
-            if (!this.isConnected) return;
+            if (!_isConnected) return;
             try
             {
                 try
                 {
                     // Unregister the event subscription
-                    remoter.MessageHandled -= new MessageReceivedCallback(sink.FireMessageReceived);
+                    _remoter.MessageHandled -= _sink.FireMessageReceived;
                 }
                 catch (RemotingException)
                 {
@@ -165,10 +156,10 @@ namespace Syslog.Console
 
                 try
                 {
-                    if (channel != null)
+                    if (_channel != null)
                     {
-                        ChannelServices.UnregisterChannel(channel);
-                        channel = null;
+                        ChannelServices.UnregisterChannel(_channel);
+                        _channel = null;
                     }
                 }
                 catch (RemotingException)
@@ -178,7 +169,7 @@ namespace Syslog.Console
             }
             finally
             {
-                this.isConnected = false;
+                _isConnected = false;
             }
         }
     }

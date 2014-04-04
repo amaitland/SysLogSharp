@@ -15,11 +15,6 @@
 */
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using Syslog.Server;
 
@@ -29,38 +24,38 @@ namespace Syslog.Console
     {
         public delegate void HandleMessageReceived(SyslogMessage e);
 
-        ConsoleServerClient client;
+        private ConsoleServerClient _client;
 
         public Main()
         {
             InitializeComponent();
         }
 
-        private void Main_Load(object sender, EventArgs e)
+        private void MainLoad(object sender, EventArgs e)
         {
-            client = new ConsoleServerClient();
-            client.Connect();
+            _client = new ConsoleServerClient();
+            _client.Connect();
             // Register the remoted event handler
             MessageReceivedSink.OnServerMessageReceived += MessageReceivedSink_OnServerMessageReceived;
         }
 
-        void MessageReceivedSink_OnServerMessageReceived(SyslogMessage message)
+        private void MessageReceivedSink_OnServerMessageReceived(SyslogMessage message)
         {
             if (!IsDisposed)
             {
                 if (!Disposing)
                 {
                     // Use Invoke to ensure that the event is fired on the forms thread.
-                    Invoke(new HandleMessageReceived(Listener_MessageReceived), message);
+                    Invoke(new HandleMessageReceived(ListenerMessageReceived), message);
                 }
                 else
                 {
-                    client.Disconnect();
+                    _client.Disconnect();
                 }
             }
         }
 
-        void Listener_MessageReceived(SyslogMessage e)
+		private void ListenerMessageReceived(SyslogMessage e)
         {
             if (e != null)
             {
@@ -72,11 +67,11 @@ namespace Syslog.Console
             }
         }
 
-        private void Main_FormClosing(object sender, FormClosingEventArgs e)
+        private void MainFormClosing(object sender, FormClosingEventArgs e)
         {
             try
             {
-                client.Disconnect();
+                _client.Disconnect();
             }
             catch (Exception)
             {
@@ -84,28 +79,28 @@ namespace Syslog.Console
             }
         }
 
-        private void toolStripButton2_Click(object sender, EventArgs e)
+        private void ToolStripButton2Click(object sender, EventArgs e)
         {
             dataGridView1.Rows.Clear();
         }
 
-        private void toolStripButton1_Click(object sender, EventArgs e)
+        private void ToolStripButton1Click(object sender, EventArgs e)
         {
-            if (!client.IsPaused)
+            if (!_client.IsPaused)
             {
-                client.PauseReceiver();
+                _client.PauseReceiver();
                 ((ToolStripButton)sender).Text = "Unlock Screen";
             }
             else
             {
-                client.ResumeReceiver();
+                _client.ResumeReceiver();
                 ((ToolStripButton)sender).Text = "Lock Screen";
             }
         }
 
-		private void closeToolStripMenuItem_Click(object sender, EventArgs e)
+		private void CloseToolStripMenuItemClick(object sender, EventArgs e)
 		{
-			this.Close();
+			Close();
 		}
     }
 }

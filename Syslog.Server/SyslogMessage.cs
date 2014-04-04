@@ -30,8 +30,6 @@
 /// All rights reserved.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Syslog.Server
 {
@@ -53,67 +51,65 @@ namespace Syslog.Server
             if (priority > 0)
             {
                 // The facility code is the nearest whole number of the priority value divided by 8
-                this.facility = (FacilityCode)(int)Math.Floor((double)priority / 8);
+                _facility = (FacilityCode)(int)Math.Floor((double)priority / 8);
                 // The severity code is the remainder of the priority value divided by 8
-                this.severity = (SeverityCode) (priority % 8);
+                _severity = (SeverityCode) (priority % 8);
             }
             else
             {
-                this.facility = FacilityCode.None;
-                this.severity = SeverityCode.None;
+                _facility = FacilityCode.None;
+                _severity = SeverityCode.None;
             }
 
-            this.timestamp = timestamp;
-            this.hostname = hostname;
-            this.message = message;
+            _timestamp = timestamp;
+            _hostname = hostname;
+            _message = message;
         }
 
-        private FacilityCode facility;
+        private readonly FacilityCode _facility;
         /// <summary>
         /// Returns an integer specifying the facility.
         /// </summary>
         public FacilityCode Facility
         {
-            get { return facility; }
+            get { return _facility; }
         }
 
-        private SeverityCode severity;
+        private readonly SeverityCode _severity;
         /// <summary>
         /// Returns an integer number specifying the severity.
         /// </summary>
         public SeverityCode Severity
         {
-            get { return severity; }
+            get { return _severity; }
         }
 
-        private DateTime timestamp;
+        private DateTime _timestamp;
         /// <summary>
         /// Returns a DateTime specifying the moment at which the event is known to have happened.  As per RFC3164,
         /// if the host does not send this value, it may be added by a relay.
         /// </summary>
         public DateTime Timestamp
         {
-            get { return timestamp; }
+            get { return _timestamp; }
         }
 
-        private string hostname;
+        private readonly string _hostname;
         /// <summary>
         /// Returns the DNS hostname where the message originated, or the IP address if the hostname is unknown.
         /// </summary>
         public string Hostname
         {
-            get { return hostname; }
-            //set { hostname = value; }
+            get { return _hostname; }
         }
 
-        private string message;
+        private readonly string _message;
         /// <summary>
         /// Returns a string indicating the textual content of the message.
         /// </summary>
         public string Message
         {
-            get { return message; }
-            //set { message = value; }
+            get { return _message; }
         }
 
         /// <summary>
@@ -122,8 +118,8 @@ namespace Syslog.Server
         /// <returns></returns>
         public override string ToString()
         {
-            return string.Concat("Facility: ", this.facility.ToString(), "\nSeverity: ", this.severity.ToString(),
-              "\nTimestamp: ", this.timestamp.ToString(), "\nHostname: ", this.hostname, "\nMessage: ", this.message);
+            return string.Concat("Facility: ", _facility.ToString(), "\nSeverity: ", _severity.ToString(),
+              "\nTimestamp: ", _timestamp.ToString(), "\nHostname: ", _hostname, "\nMessage: ", _message);
         }
     }
 }

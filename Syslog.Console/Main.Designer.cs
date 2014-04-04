@@ -73,7 +73,7 @@ namespace Syslog.Console
 			this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
 			this.closeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
 			this.closeToolStripMenuItem.Text = "&Close";
-			this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
+			this.closeToolStripMenuItem.Click += new System.EventHandler(this.CloseToolStripMenuItemClick);
 			// 
 			// toolStrip1
 			// 
@@ -95,7 +95,7 @@ namespace Syslog.Console
 			this.toolStripButton1.Size = new System.Drawing.Size(74, 22);
 			this.toolStripButton1.Text = "Lock Screen";
 			this.toolStripButton1.TextImageRelation = System.Windows.Forms.TextImageRelation.TextAboveImage;
-			this.toolStripButton1.Click += new System.EventHandler(this.toolStripButton1_Click);
+			this.toolStripButton1.Click += new System.EventHandler(this.ToolStripButton1Click);
 			// 
 			// toolStripButton2
 			// 
@@ -105,7 +105,7 @@ namespace Syslog.Console
 			this.toolStripButton2.Name = "toolStripButton2";
 			this.toolStripButton2.Size = new System.Drawing.Size(76, 22);
 			this.toolStripButton2.Text = "Clear Screen";
-			this.toolStripButton2.Click += new System.EventHandler(this.toolStripButton2_Click);
+			this.toolStripButton2.Click += new System.EventHandler(this.ToolStripButton2Click);
 			// 
 			// statusStrip1
 			// 
@@ -201,8 +201,8 @@ namespace Syslog.Console
 			this.MainMenuStrip = this.menuStrip1;
 			this.Name = "Main";
 			this.Text = "Syslog Console";
-			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Main_FormClosing);
-			this.Load += new System.EventHandler(this.Main_Load);
+			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainFormClosing);
+			this.Load += new System.EventHandler(this.MainLoad);
 			this.menuStrip1.ResumeLayout(false);
 			this.menuStrip1.PerformLayout();
 			this.toolStrip1.ResumeLayout(false);

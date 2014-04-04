@@ -33,7 +33,7 @@ namespace Syslog.Server
 			ConnectionString = connectionString;
 		}
 
-		private string connectionString;
+		private string _connectionString;
         /// <summary>
         /// Gets or sets the connectionString
         /// </summary>
@@ -45,7 +45,7 @@ namespace Syslog.Server
 				{
 					try
 					{
-						return connectionString;
+						return _connectionString;
 					}
 					finally
 					{
@@ -57,7 +57,7 @@ namespace Syslog.Server
 			{
 				lock (this)
 				{
-					connectionString = value;
+					_connectionString = value;
 					Monitor.Pulse(this);
 				}
 			}

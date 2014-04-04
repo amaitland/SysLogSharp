@@ -16,9 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Text;
-using System.Reflection;
 using System.Threading;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -31,10 +28,10 @@ namespace Syslog.Server
     internal class LogBuffer
     {
         // List of buffers with a list of messages to store
-        private Dictionary<string, List<string[]>> buffers = new Dictionary<string, List<string[]>>();
+        private readonly Dictionary<string, List<string[]>> _buffers = new Dictionary<string, List<string[]>>();
         // List of message handlers
-        private Dictionary<string, MessageHandler> handlers = new Dictionary<string, MessageHandler>();
-        private Timer flushTimer = null;
+        private readonly Dictionary<string, MessageHandler> _handlers = new Dictionary<string, MessageHandler>();
+        private readonly Timer _flushTimer;
 
         /// <summary>
         /// Creates a new instance of the log buffer and starts the flush timer
@@ -45,62 +42,53 @@ namespace Syslog.Server
         /// </remarks>
         public LogBuffer(int flushFrequency)
         {
-            if (flushFrequency > 0)
-            {
-                FlushFrequency = flushFrequency;
-            }
-            else
-            {
-                FlushFrequency = 30000;
-            }
+	        FlushFrequency = flushFrequency > 0 ? flushFrequency : 30000;
 
-            flushTimer = new Timer(new TimerCallback(FlushTimer_Tick), null, this.flushFrequency, this.flushFrequency);
+	        _flushTimer = new Timer(FlushTimerTick, null, _flushFrequency, _flushFrequency);
         }
 
-        /// <summary>
+	    /// <summary>
         /// Creates a new instance of the log buffer and starts the flush timer
         /// </summary>
         /// <remarks>
         /// The flush timer activates every 30 seconds by default.
         /// </remarks>
-        public LogBuffer()
-            : this(30)
+        public LogBuffer() : this(30)
         {
 
         }
 
-        private int flushFrequency;
+        private int _flushFrequency;
         /// <summary>
         /// Gets or sets the time, in seconds, bewteen log flushes.
         /// </summary>
         public int FlushFrequency
         {
-            get { return flushFrequency; }
+            get { return _flushFrequency; }
             set
             {
-                flushFrequency = value * 1000;
-                if (flushTimer != null)
+                _flushFrequency = value * 1000;
+                if (_flushTimer != null)
                 {
-                    flushTimer.Change(0, flushFrequency);
+                    _flushTimer.Change(0, _flushFrequency);
                 }
             }
         }
 
-
-        /// <summary>
+		/// <summary>
         /// Sets up the buffer for the given <paramref name="handler"/>.
         /// </summary>
-        /// <param name="assembly">Name of the assembly the buffer will handle </param>
-        public void InitializeBuffer(MessageHandler handler)
+		/// <param name="handler">Message Handler </param>
+        public void InitHandler(MessageHandler handler)
         {
-            if (!buffers.ContainsKey(handler.AssemblyName))
+            if (!_buffers.ContainsKey(handler.AssemblyName))
             {
-                buffers.Add(handler.AssemblyName, new List<string[]>());
+                _buffers.Add(handler.AssemblyName, new List<string[]>());
             }
 
-            if (!handlers.ContainsKey(handler.AssemblyName))
+            if (!_handlers.ContainsKey(handler.AssemblyName))
             {
-                handlers.Add(handler.AssemblyName, handler);
+                _handlers.Add(handler.AssemblyName, handler);
             }
         }
 
@@ -114,14 +102,14 @@ namespace Syslog.Server
             try
             {
                 // Lock the buffer while adding data so that other threads do not try to write to the buffer
-                lock (buffers[bufferName])
+                lock (_buffers[bufferName])
                 {
-                    if (buffers.ContainsKey(bufferName))
+                    if (_buffers.ContainsKey(bufferName))
                     {
-                        buffers[bufferName].Add(entry);
+                        _buffers[bufferName].Add(entry);
                     }
                     // Notify waiting threads that this object is available
-                    Monitor.Pulse(buffers[bufferName]);
+                    Monitor.Pulse(_buffers[bufferName]);
                 }
             }
             catch (Exception ex)
@@ -135,7 +123,7 @@ namespace Syslog.Server
         /// Handles the Timer.Tick event.
         /// </summary>
         /// <param name="state">The state of the timer.</param>
-        private void FlushTimer_Tick(object state)
+        private void FlushTimerTick(object state)
         {
             Flush();
         }
@@ -146,16 +134,18 @@ namespace Syslog.Server
         public void Flush()
         {
             // Get a fast, one-way, read-only enumer of the buffers' keys
-            Dictionary<string, List<string[]>>.KeyCollection.Enumerator enumer = buffers.Keys.GetEnumerator();
-            List<string[]> currentVal, copiedList = null;
+            var enumer = _buffers.Keys.GetEnumerator();
+	        List<string[]> copiedList = null;
 
-            // Ensure that a buffer is defined
+	        // Ensure that a buffer is defined
             if (enumer.Current == null)
-            { enumer.MoveNext(); }
+            {
+	            enumer.MoveNext();
+            }
 
             while (enumer.Current != null)
             {
-                currentVal = buffers[enumer.Current];
+                var currentVal = _buffers[enumer.Current];
 
                 // Lock the buffer while a copy is made so that new entries being added do not block or fail the copy.
                 lock (currentVal)
@@ -164,7 +154,7 @@ namespace Syslog.Server
                     {
                         if (currentVal.Count > 0)
                         {
-                            copiedList = DeepCopy<List<string[]>>(currentVal);
+                            copiedList = DeepCopy(currentVal);
 
                             // Ensure that the copied object contains the same number of messages.
                             if (copiedList.Count != currentVal.Count)
@@ -193,7 +183,7 @@ namespace Syslog.Server
                     try
                     {
                         // Get a refence to the storer interface of the handler
-                        var storer = handlers[enumer.Current].GetStorer();
+                        var storer = _handlers[enumer.Current].GetStorer();
 
                         if (storer != null)
                         {
@@ -228,7 +218,7 @@ namespace Syslog.Server
         /// <returns>A copy of the object.</returns>
         /// <remarks>Creates an actual copy of memory and not just a copy of memory references using binary serialization in memory
         /// as it is quick and simple.</remarks>
-        public static T DeepCopy<T>(T obj)
+        private static T DeepCopy<T>(T obj)
         {
             object result = null;
 

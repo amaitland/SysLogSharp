@@ -16,7 +16,6 @@
 
 using System;
 using System.Reflection;
-using System.Threading;
 
 namespace Syslog.Server
 {
@@ -25,12 +24,12 @@ namespace Syslog.Server
     /// </summary>
     internal class MessageHandlerBase
     {
-        private Assembly assemblyRef;
-        private Type parserType;
-        IParser parser;
+        private Assembly _assemblyRef;
+        private Type _parserType;
+        private IParser _parser;
 
-        private Type storerType;
-        IDataStore _dataStore;
+        private Type _storerType;
+        private IDataStore _dataStore;
 
         /// <summary>
         /// Creates a new instance of the class.
@@ -44,63 +43,43 @@ namespace Syslog.Server
             AssemblyName = assemblyName;
             ParserClassName = parserClassName;
             StorerClassName = storerClassName;
-            this.ConnectionString = connectionString;
+            ConnectionString = connectionString;
         }
 
-        private string assemblyName;
-        /// <summary>
-        /// Gets or sets the full compiled name of the handler assembly.
-        /// </summary>        
-        public string AssemblyName
-        {
-            get { return assemblyName; }
-            set { assemblyName = value; }
-        }
+	    /// <summary>
+	    /// Gets or sets the full compiled name of the handler assembly.
+	    /// </summary>        
+	    public string AssemblyName { get; set; }
 
-        private string parserClassName;
-        /// <summary>
-        /// Gets or sets the name of the class that implements the <see cref="IParser"/> interface in the assembly.
-        /// </summary>
-        public string ParserClassName
-        {
-            get { return parserClassName; }
-            set { parserClassName = value; }
-        }
+	    /// <summary>
+	    /// Gets or sets the name of the class that implements the <see cref="IParser"/> interface in the assembly.
+	    /// </summary>
+	    public string ParserClassName { get; set; }
 
-        private string storerClassName;
-        /// <summary>
-        /// Gets or sets the name of the class that implements the <see cref="IDataStore"/> interface in the assembly.
-        /// </summary>
-        public string StorerClassName
-        {
-            get { return storerClassName; }
-            set { storerClassName = value; }
-        }
+	    /// <summary>
+	    /// Gets or sets the name of the class that implements the <see cref="IDataStore"/> interface in the assembly.
+	    /// </summary>
+	    public string StorerClassName { get; set; }
 
-        private string connectionString;
-        /// <summary>
-        /// Gets or sets the connection string for the storer class.
-        /// </summary>
-        public string ConnectionString
-        {
-            get { return connectionString; }
-            set { connectionString = value; }
-        }
+	    /// <summary>
+	    /// Gets or sets the connection string for the storer class.
+	    /// </summary>
+	    public string ConnectionString { get; set; }
 
-        /// <summary>
+	    /// <summary>
         /// Gets the assembly by the name defined in the parameter <see cref="AssemblyName"/>.
         /// </summary>
         /// <returns>Returns the found assembly.</returns>
         public Assembly GetAssembly()
         {
-            if (assemblyRef == null)
+            if (_assemblyRef == null)
             {
                 if (AssemblyName != null)
                 {
-                    assemblyRef = Assembly.Load(this.AssemblyName);
+                    _assemblyRef = Assembly.Load(AssemblyName);
                 }
             }
-            return assemblyRef;
+            return _assemblyRef;
         }
 
         /// <summary>
@@ -109,31 +88,31 @@ namespace Syslog.Server
         /// <returns>Returns the <see cref="IParser"/> class reference.</returns>
         public IParser GetParser()
         {
-            if (parser == null)
+            if (_parser == null)
             {
-                if (parserType == null)
+                if (_parserType == null)
                 {
                     if (AssemblyName != null && ParserClassName != null)
                     {
-                        if (assemblyRef == null)
+                        if (_assemblyRef == null)
                         {
                             GetAssembly();
                         }
 
-                        if (assemblyRef != null)
+                        if (_assemblyRef != null)
                         {
-                            parserType = assemblyRef.GetType(AssemblyName + "." + ParserClassName);
+                            _parserType = _assemblyRef.GetType(AssemblyName + "." + ParserClassName);
                         }
                     }
                 }
 
-                if (parserType != null && parser == null)
+                if (_parserType != null && _parser == null)
                 {
-                    parser = (IParser)Activator.CreateInstance(parserType);
+                    _parser = (IParser)Activator.CreateInstance(_parserType);
                 }
             }
 
-            return parser;
+            return _parser;
         }
 
         /// <summary>
@@ -144,31 +123,31 @@ namespace Syslog.Server
         {
             if (_dataStore == null)
             {
-                if (storerType == null)
+                if (_storerType == null)
                 {
                     if (AssemblyName != null && StorerClassName != null)
                     {
-                        if (assemblyRef == null)
+                        if (_assemblyRef == null)
                         {
                             GetAssembly();
                         }
 
-                        if (assemblyRef != null)
+                        if (_assemblyRef != null)
                         {
-                            storerType = assemblyRef.GetType(AssemblyName + "." + StorerClassName);
+                            _storerType = _assemblyRef.GetType(AssemblyName + "." + StorerClassName);
                         }
                     }
                 }
 
-                if (storerType != null && _dataStore == null)
+                if (_storerType != null && _dataStore == null)
                 {
-                    if (storerType.BaseType == typeof(AbstractDatabaseDataStore))
+                    if (_storerType.BaseType == typeof(AbstractDatabaseDataStore))
                     {
-                        _dataStore = (IDataStore)Activator.CreateInstance(storerType, ConnectionString);
+                        _dataStore = (IDataStore)Activator.CreateInstance(_storerType, ConnectionString);
                     }
                     else
                     {
-                        _dataStore = (IDataStore)Activator.CreateInstance(storerType);
+                        _dataStore = (IDataStore)Activator.CreateInstance(_storerType);
                     }
                 }
             }

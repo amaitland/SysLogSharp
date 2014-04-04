@@ -15,6 +15,7 @@
 */
 
 using System;
+using System.Net;
 using Syslog.GenericFilter;
 using Syslog.Server;
 using Syslog.Server.Console;
@@ -27,9 +28,15 @@ namespace Syslog.Test
 
 		public static void Main(string[] args)
 		{
-			var listener = new Listener(System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"],
-			                            Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["listenPort"]),
-			                            Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["bufferFlushFrequency"]));
+			var settings = Settings.Default;
+
+			IPAddress address;
+			if (!IPAddress.TryParse(settings.ListenIPAddress, out address))
+			{
+				address = IPAddress.Any;
+			}
+
+			var listener = new Listener(address, settings.ListenPort, settings.BufferFlushFrequency);
 
 			listener.MessageReceived += MessageReceived;
 
@@ -46,8 +53,8 @@ namespace Syslog.Test
 		}
 
 	    private static void MessageReceived(MessageReceivedEventArgs e)
-        {
-            Console.WriteLine(Parser.Parse(e.SyslogMessage));
+	    {
+			Console.WriteLine(e.SyslogMessage.Message);
         }
     }
 }

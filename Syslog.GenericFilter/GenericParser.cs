@@ -36,8 +36,8 @@ namespace Syslog.GenericFilter
                 return null;
             }
 
-            string[] msgParts = message.Message.Split(' ');
-            string[] msg = null;
+            var msgParts = message.Message.Split(' ');
+            string[] msg;
 
 			Console.WriteLine(message.Message);
 

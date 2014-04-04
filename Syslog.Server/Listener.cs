@@ -51,7 +51,7 @@ namespace Syslog.Server
 	{
 		public event Action<MessageReceivedEventArgs> MessageReceived;
 
-		private const int RECEIVE_BUFFER_SIZE = 1024;
+		private const int ReceiveBufferSize = 1024;
 
 		private LogBuffer _buffer;
         private readonly int _logBufferFlushFrequency = 30;
@@ -63,7 +63,7 @@ namespace Syslog.Server
 		private Socket _sendSocket;
 		private readonly int _listenPort;
 		
-		private byte[] _receiveBuffer = new Byte[RECEIVE_BUFFER_SIZE];
+		private byte[] _receiveBuffer = new Byte[ReceiveBufferSize];
 		private EndPoint _remoteEndpoint;
 		private readonly Regex _msgRegex = new Regex(@"
 (\<(?<PRI>\d{1,3})\>){0,1}
@@ -86,16 +86,13 @@ namespace Syslog.Server
 		/// <param name="listenIpAddress">A valid IPv4 address.</param>
 		/// <param name="listenPort">A valid port value from 1 to 65535</param>
 		/// <param name="logFlushFrequency">Frequence to flush the log file default 30</param>
-		public Listener(string listenIpAddress, int listenPort, int logFlushFrequency)
+		public Listener(IPAddress listenIpAddress, int listenPort, int logFlushFrequency)
         {
             if (listenIpAddress == null)
             {
                 throw new ArgumentNullException("listenIpAddress", "An IP Address is required.");
             }
-
-            IPAddress tempIp = null;
-
-            if (listenIpAddress.ToUpper() != "ANY" && !IPAddress.TryParse(listenIpAddress, out tempIp))
+            if (listenIpAddress == null)
             {
                 throw new ArgumentException("IP address is not valid.", "listenIpAddress");
             }
@@ -110,12 +107,7 @@ namespace Syslog.Server
                 throw new ArgumentOutOfRangeException("logFlushFrequency", "logFlushFrequency must be greater than 0.");
             }
 
-            if (tempIp == null)
-            {
-                tempIp = IPAddress.Any;
-            }
-
-            _listenAddress = tempIp;
+			_listenAddress = listenIpAddress;
             _listenPort = listenPort;
             _logBufferFlushFrequency = logFlushFrequency;
 		}
@@ -187,22 +179,22 @@ namespace Syslog.Server
                     // If the handler has a storage class then setup the buffer to temporarily store the messages
 					if (handler.StorageClassName != null)
 					{
-						_buffer.InitializeBuffer(msgHandler);
+						_buffer.InitHandler(msgHandler);
 					}
 
                     // If the handler is configured for specific IP addresses, setup the IP handler lookup list
-					if (handler.FilterIPAddresses != null)
+					if (!string.IsNullOrEmpty(handler.FilterIPAddresses))
 					{
-						string[] filters = handler.FilterIPAddresses.Split(',', ';');
+						var filters = handler.FilterIPAddresses.Split(',', ';');
 
-						for (int i = 0; i < filters.Length; i++)
+						foreach (var filter in filters)
 						{
-							_ipFilters.Add(filters[i], msgHandler);
+							_ipFilters.Add(filter, msgHandler);
 
-                            // If the handler also has IP forwards set, add them to the IP Forwards lookup list
-							if (handler.IPForwards != null && handler.IPForwards.Length > 0)
+							// If the handler also has IP forwards set, add them to the IP Forwards lookup list
+							if (!string.IsNullOrEmpty(handler.IPForwards))
 							{
-								_ipForwards.Add(filters[i], handler.IPForwards.Split(',', ';'));
+								_ipForwards.Add(filter, handler.IPForwards.Split(',', ';'));
 							}
 						}
 					}
@@ -254,10 +246,10 @@ namespace Syslog.Server
 				var ep = _remoteEndpoint;
 
                 // Setup the receive buffer to be used when a message is received
-				_receiveBuffer = new byte[RECEIVE_BUFFER_SIZE]; // nice and big receive buffer
+				_receiveBuffer = new byte[ReceiveBufferSize]; // nice and big receive buffer
 
                 // Setup the receive callback
-				_socket.BeginReceiveFrom(_receiveBuffer, 0, RECEIVE_BUFFER_SIZE, SocketFlags.None, ref ep, ReceiveCallback, _socket);
+				_socket.BeginReceiveFrom(_receiveBuffer, 0, ReceiveBufferSize, SocketFlags.None, ref ep, ReceiveCallback, _socket);
 			}
 			catch (Exception ex)
 			{
@@ -338,7 +330,7 @@ namespace Syslog.Server
 				{
 					foreach (string ipAddress in _ipForwards[remoteEp.Address.ToString()])
 					{
-						byte[] sendBuffer = new byte[_receiveBuffer.Length];
+						var sendBuffer = new byte[_receiveBuffer.Length];
 						_receiveBuffer.CopyTo(sendBuffer, 0);
 
 						_sendSocket.BeginSendTo(sendBuffer, 0, inlen, SocketFlags.None,
@@ -413,12 +405,10 @@ namespace Syslog.Server
 					hostname = ep.ToString();
 				}
 
-				string message = null;
-
-                // Get the message text part of the message if it was found
+				// Get the message text part of the message if it was found
 				if ((m.Groups["MSG"].Value) != null)
 				{
-					message = m.Groups["MSG"].Value;
+					var message = m.Groups["MSG"].Value;
 
 					try
 					{
@@ -464,7 +454,6 @@ namespace Syslog.Server
 						System.Diagnostics.EventLogEntryType.Warning);
 					}
 				}
-
 			}
 
             // Return the socket to the listen state

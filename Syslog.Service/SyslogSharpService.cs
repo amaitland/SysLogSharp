@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License along with Syslog Sharp. If not, see http://www.gnu.org/licenses/.
 */
 
-using System;
+using System.Net;
 using System.ServiceProcess;
 using Syslog.Server;
 using Syslog.Server.Console;
@@ -35,11 +35,15 @@ namespace Syslog.Service
         {
             if (_listener == null)
             {
-	            var ipAddress = System.Configuration.ConfigurationManager.AppSettings["listenIPAddress"];
-	            var port = Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["listenPort"]);
-	            var flushFrequency = Int32.Parse(System.Configuration.ConfigurationManager.AppSettings["bufferFlushFrequency"]);
+	            var settings = Settings.Default;
+
+				IPAddress address;
+				if (!IPAddress.TryParse(settings.ListenIPAddress, out address))
+				{
+					address = IPAddress.Any;
+				}
 				
-				_listener = new Listener(ipAddress, port, flushFrequency);
+				_listener = new Listener(address, settings.ListenPort, settings.BufferFlushFrequency);
             }
 
             if (_sysLogServer == null)

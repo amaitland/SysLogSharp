@@ -23,13 +23,13 @@ namespace Syslog.Server
     /// </summary>
     public class MessageReceivedEventArgs : EventArgs
     {
-        private readonly SyslogMessage syslogMessage;
+        private readonly SyslogMessage _syslogMessage;
         /// <summary>
         /// Returns the syslog message as received from the remote host.
         /// </summary>
         public SyslogMessage SyslogMessage
         {
-            get { return syslogMessage; }
+            get { return _syslogMessage; }
         }
 
         /// <summary>
@@ -37,9 +37,8 @@ namespace Syslog.Server
         /// </summary>
         /// <param name="sm">The <see cref="SyslogMessage"/> of the event.</param>
         public MessageReceivedEventArgs(SyslogMessage sm)
-            : base()
         {
-            syslogMessage = sm;
+            _syslogMessage = sm;
         }
     }
 }
